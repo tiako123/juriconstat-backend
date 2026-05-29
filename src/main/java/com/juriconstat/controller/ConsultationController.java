@@ -90,4 +90,10 @@ public class ConsultationController {
             org.springframework.security.access.AccessDeniedException ex) {
         return ResponseEntity.status(403).body(Map.of("error", ex.getMessage()));
     }
+
+    @ExceptionHandler(com.juriconstat.exception.QuotaExceededException.class)
+    public ResponseEntity<Map<String, String>> handleQuotaExceeded(
+            com.juriconstat.exception.QuotaExceededException ex) {
+        return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Map.of("erreur", ex.getMessage()));
+    }
 }

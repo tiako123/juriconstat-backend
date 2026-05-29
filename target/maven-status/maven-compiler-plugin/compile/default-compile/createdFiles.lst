@@ -1,3 +1,4 @@
+com\juriconstat\controller\AdminController.class
 com\juriconstat\repository\ConsultationRepository.class
 com\juriconstat\model\User$UserBuilder.class
 com\juriconstat\security\JwtAuthFilter.class
@@ -19,8 +20,12 @@ com\juriconstat\dto\UserProfileResponse$UserProfileResponseBuilder.class
 com\juriconstat\repository\UserRepository.class
 com\juriconstat\dto\ConsultationResponse.class
 com\juriconstat\model\Consultation.class
+com\juriconstat\exception\GlobalExceptionHandler.class
 com\juriconstat\config\SecurityConfig.class
+com\juriconstat\dto\AdminUserResponse.class
 com\juriconstat\controller\UserController.class
 com\juriconstat\dto\LoginRequest.class
 com\juriconstat\controller\AuthController.class
+com\juriconstat\exception\QuotaExceededException.class
+com\juriconstat\dto\AdminUserResponse$AdminUserResponseBuilder.class
 com\juriconstat\dto\AuthResponse$AuthResponseBuilder.class

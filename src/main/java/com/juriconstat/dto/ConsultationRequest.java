@@ -34,4 +34,14 @@ public class ConsultationRequest {
      * Exemples : "fr", "en"
      */
     private String langue;
+
+    /**
+     * Données du média encodées en Base64 (optionnel).
+     */
+    private String mediaData;
+
+    /**
+     * Type MIME du média (ex: image/jpeg, audio/mp3, video/mp4) (optionnel).
+     */
+    private String mediaMimeType;
 }

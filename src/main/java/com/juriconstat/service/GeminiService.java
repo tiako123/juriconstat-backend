@@ -39,23 +39,49 @@ public class GeminiService {
     // ─── Méthode principale ────────────────────────────────────────────────────
 
     /**
-     * Génère une réponse juridique à partir d'une requête textuelle.
+     * Génère une réponse juridique à partir d'une requête textuelle et d'un média optionnel.
      *
-     * @param requete texte de la question juridique de l'utilisateur
-     * @param pays    pays de référence pour le droit applicable
-     * @param langue  langue de la réponse ("fr", "en", etc.)
+     * @param requete       texte de la question juridique de l'utilisateur
+     * @param pays          pays de référence pour le droit applicable
+     * @param langue        langue de la réponse ("fr", "en", etc.)
+     * @param mediaData     données du média encodées en Base64 (optionnel)
+     * @param mediaMimeType type MIME du média (optionnel)
      * @return réponse juridique générée par Gemini IA
      */
-    public String genererReponseJuridique(String requete, String pays, String langue) {
+    public String genererReponseJuridique(String requete, String pays, String langue, String mediaData, String mediaMimeType) {
         String prompt = construirePrompt(requete, pays, langue);
         String urlComplete = apiUrl + "?key=" + apiKey;
+
+        // Construction de la liste des parties (parts) pour la requête
+        List<Map<String, Object>> parts;
+        if (mediaData != null && !mediaData.trim().isEmpty() && mediaMimeType != null && !mediaMimeType.trim().isEmpty()) {
+            // Nettoyage de la base64 au cas où elle contient un préfixe (ex: "data:image/jpeg;base64,")
+            String base64Cleaned = mediaData;
+            if (mediaData.contains("base64,")) {
+                base64Cleaned = mediaData.substring(mediaData.indexOf("base64,") + 7);
+            }
+            // Enlever les retours à la ligne indésirables
+            base64Cleaned = base64Cleaned.replaceAll("[\\r\\n]", "");
+
+            parts = List.of(
+                    Map.of("text", prompt),
+                    Map.of("inlineData", Map.of(
+                            "mimeType", mediaMimeType,
+                            "data", base64Cleaned
+                    ))
+            );
+            log.info("Appel multimodal Gemini avec fichier type: {}", mediaMimeType);
+        } else {
+            parts = List.of(
+                    Map.of("text", prompt)
+            );
+            log.info("Appel textuel pur Gemini");
+        }
 
         // Corps de la requête Gemini
         Map<String, Object> requestBody = Map.of(
                 "contents", List.of(
-                        Map.of("parts", List.of(
-                                Map.of("text", prompt)
-                        ))
+                        Map.of("parts", parts)
                 ),
                 "generationConfig", Map.of(
                         "temperature", 0.3,

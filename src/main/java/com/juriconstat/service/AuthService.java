@@ -45,7 +45,7 @@ public class AuthService {
                 .pays(request.getPays())
                 .langue(request.getLangue())
                 .role("ROLE_USER")
-                .abonnement("FREE")
+                .abonnement("GRATUIT")
                 .build();
 
         User saved = userRepository.save(user);

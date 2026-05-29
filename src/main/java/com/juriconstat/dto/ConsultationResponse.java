@@ -42,4 +42,10 @@ public class ConsultationResponse {
 
     /** ID de l'utilisateur auteur de la consultation. */
     private Long userId;
+
+    /** Données du média encodées en Base64 (optionnel). */
+    private String mediaData;
+
+    /** Type MIME du média (optionnel). */
+    private String mediaMimeType;
 }

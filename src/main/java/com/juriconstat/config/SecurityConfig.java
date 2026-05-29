@@ -43,7 +43,10 @@ public class SecurityConfig {
             // Règles d'autorisation
             .authorizeHttpRequests(auth -> auth
                 // Endpoints publics d'authentification
-                .requestMatchers(HttpMethod.POST, "/auth/register", "/auth/login").permitAll()
+                .requestMatchers("/auth/**").permitAll()
+
+                // Page d'erreur par défaut de Spring Boot
+                .requestMatchers("/error").permitAll()
 
                 // Console H2 (profil dev uniquement)
                 .requestMatchers("/h2-console/**").permitAll()
@@ -53,6 +56,9 @@ public class SecurityConfig {
 
                 // Suppression d'utilisateurs : admin seulement
                 .requestMatchers(HttpMethod.DELETE, "/users/**").hasRole("ADMIN")
+
+                // Endpoints d'administration : admin seulement
+                .requestMatchers("/admin/**").hasRole("ADMIN")
 
                 // Tout le reste nécessite une authentification
                 .anyRequest().authenticated()

@@ -23,11 +23,4 @@ public class AppConfig {
         return new RestTemplate();
     }
 
-    /**
-     * Mapper JSON partagé dans toute l'application.
-     */
-    @Bean
-    public ObjectMapper objectMapper() {
-        return new ObjectMapper();
-    }
 }

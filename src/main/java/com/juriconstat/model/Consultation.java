@@ -71,4 +71,19 @@ public class Consultation {
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
+
+    // ===== Médias associés (multimodalité) =====
+
+    /**
+     * Fichier média encodé en base64.
+     */
+    @Lob
+    @Column(name = "media_data", columnDefinition = "TEXT")
+    private String mediaData;
+
+    /**
+     * Type MIME du média (ex : image/jpeg, audio/mp3, video/mp4)
+     */
+    @Column(name = "media_mime_type", length = 100)
+    private String mediaMimeType;
 }

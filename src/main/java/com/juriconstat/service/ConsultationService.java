@@ -6,6 +6,7 @@ import com.juriconstat.model.Consultation;
 import com.juriconstat.model.User;
 import com.juriconstat.repository.ConsultationRepository;
 import com.juriconstat.repository.UserRepository;
+import com.juriconstat.exception.QuotaExceededException;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -13,6 +14,7 @@ import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -44,9 +46,10 @@ public class ConsultationService {
      * Étapes :
      * 1. Récupère l'utilisateur par son email (depuis le JWT).
      * 2. Détermine le pays et la langue (depuis la requête ou le profil utilisateur).
-     * 3. Appelle Gemini IA pour obtenir une réponse juridique.
-     * 4. Sauvegarde la consultation en base de données.
-     * 5. Retourne la consultation enrichie.
+     * 3. Applique la règle de quota mensuel pour les abonnements GRATUIT.
+     * 4. Appelle Gemini IA pour obtenir une réponse juridique.
+     * 5. Sauvegarde la consultation en base de données.
+     * 6. Retourne la consultation enrichie.
      *
      * @param request données de la requête juridique
      * @param userEmail email de l'utilisateur authentifié (extrait du JWT)
@@ -57,7 +60,22 @@ public class ConsultationService {
         User user = userRepository.findByEmail(userEmail)
                 .orElseThrow(() -> new EntityNotFoundException("Utilisateur introuvable : " + userEmail));
 
-        // 2. Déterminer pays et langue (la requête peut surcharger le profil)
+        // 2. Vérifier le quota de consultations pour les utilisateurs gratuits (max 5 par mois)
+        if ("GRATUIT".equals(user.getAbonnement())) {
+            LocalDateTime startOfMonth = LocalDateTime.now()
+                    .withDayOfMonth(1)
+                    .withHour(0)
+                    .withMinute(0)
+                    .withSecond(0)
+                    .withNano(0);
+            long consultationsCeMois = consultationRepository.countByUserIdAndCreatedAtAfter(user.getId(), startOfMonth);
+            if (consultationsCeMois >= 5) {
+                log.warn("Quota atteint pour l'utilisateur {} ({} consultations ce mois-ci)", userEmail, consultationsCeMois);
+                throw new QuotaExceededException("Limite mensuelle atteinte");
+            }
+        }
+
+        // 3. Déterminer pays et langue (la requête peut surcharger le profil)
         String pays   = (request.getPays()   != null && !request.getPays().isBlank())
                 ? request.getPays()   : user.getPays();
         String langue = (request.getLangue() != null && !request.getLangue().isBlank())
@@ -69,10 +87,10 @@ public class ConsultationService {
 
         log.info("Nouvelle consultation pour {} | pays={} | langue={}", userEmail, pays, langue);
 
-        // 3. Appeler Gemini IA
+        // 4. Appeler Gemini IA
         String reponseIa = geminiService.genererReponseJuridique(request.getRequete(), pays, langue);
 
-        // 4. Sauvegarder en base
+        // 5. Sauvegarder en base
         Consultation consultation = Consultation.builder()
                 .user(user)
                 .requete(request.getRequete())
@@ -85,7 +103,7 @@ public class ConsultationService {
 
         log.info("Consultation #{} sauvegardée avec succès", saved.getId());
 
-        // 5. Retourner le DTO de réponse
+        // 6. Retourner le DTO de réponse
         return toResponse(saved);
     }
 
