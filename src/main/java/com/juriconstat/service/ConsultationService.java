@@ -87,8 +87,10 @@ public class ConsultationService {
 
         log.info("Nouvelle consultation pour {} | pays={} | langue={}", userEmail, pays, langue);
 
-        // 4. Appeler Gemini IA
-        String reponseIa = geminiService.genererReponseJuridique(request.getRequete(), pays, langue);
+        // 4. Appeler Gemini IA avec les paramètres de média
+        String reponseIa = geminiService.genererReponseJuridique(
+                request.getRequete(), pays, langue, request.getMediaData(), request.getMediaMimeType()
+        );
 
         // 5. Sauvegarder en base
         Consultation consultation = Consultation.builder()
@@ -97,6 +99,8 @@ public class ConsultationService {
                 .reponseIa(reponseIa)
                 .pays(pays)
                 .langue(langue)
+                .mediaData(request.getMediaData())
+                .mediaMimeType(request.getMediaMimeType())
                 .build();
 
         Consultation saved = consultationRepository.save(consultation);
@@ -146,6 +150,8 @@ public class ConsultationService {
                 .langue(c.getLangue())
                 .createdAt(c.getCreatedAt())
                 .userId(c.getUser().getId())
+                .mediaData(c.getMediaData())
+                .mediaMimeType(c.getMediaMimeType())
                 .build();
     }
 }

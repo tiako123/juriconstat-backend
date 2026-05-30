@@ -1,4 +1,5 @@
 com\juriconstat\controller\AdminController.class
+com\juriconstat\config\DatabaseSeeder.class
 com\juriconstat\repository\ConsultationRepository.class
 com\juriconstat\model\User$UserBuilder.class
 com\juriconstat\security\JwtAuthFilter.class

@@ -2,6 +2,7 @@ package com.juriconstat.service;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.juriconstat.dto.OcrResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -105,6 +106,74 @@ public class GeminiService {
             log.error("Erreur lors de l'appel à l'API Gemini : {}", e.getMessage(), e);
             return "⚠️ Le service d'assistance juridique est temporairement indisponible. "
                     + "Veuillez réessayer dans quelques instants ou contacter un avocat directement.";
+        }
+    }
+
+    /**
+     * Analyse une image (carte grise ou attestation d'assurance) pour extraire
+     * les informations structurées via OCR assisté par l'IA Gemini.
+     *
+     * @param mediaData     données de l'image en Base64
+     * @param mediaMimeType type MIME (ex: image/jpeg)
+     * @return OcrResponse contenant nom, immatriculation, assurance, police
+     */
+    public OcrResponse extraireOcrDepuisImage(String mediaData, String mediaMimeType) {
+        String prompt = "Extrait de manière précise les informations suivantes du document fourni (qui est soit une carte grise, soit une attestation d'assurance) et retourne-les EXACTEMENT sous ce format JSON strict sans balises supplémentaires : { \"nom\": \"Prénom et Nom du propriétaire/assuré\", \"immatriculation\": \"Plaque d'immatriculation (formaté XX-000-XX ou 0000 XX 00)\", \"assurance\": \"Nom de la compagnie d'assurance (si présent)\", \"police\": \"Numéro de police d'assurance (si présent)\" }. Si une information n'est pas trouvée, mets null au lieu de la clé. N'invente rien.";
+        String urlComplete = apiUrl + "?key=" + apiKey;
+
+        String base64Cleaned = mediaData;
+        if (mediaData.contains("base64,")) {
+            base64Cleaned = mediaData.substring(mediaData.indexOf("base64,") + 7);
+        }
+        base64Cleaned = base64Cleaned.replaceAll("[\\r\\n]", "");
+
+        List<Map<String, Object>> parts = List.of(
+                Map.of("text", prompt),
+                Map.of("inlineData", Map.of(
+                        "mimeType", mediaMimeType,
+                        "data", base64Cleaned
+                ))
+        );
+
+        Map<String, Object> requestBody = Map.of(
+                "contents", List.of(
+                        Map.of("parts", parts)
+                ),
+                "generationConfig", Map.of(
+                        "temperature", 0.0, // Faible température pour éviter les hallucinations
+                        "maxOutputTokens", 500
+                )
+        );
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_JSON);
+
+        HttpEntity<Map<String, Object>> entity = new HttpEntity<>(requestBody, headers);
+
+        try {
+            ResponseEntity<String> response = restTemplate.exchange(
+                    urlComplete, HttpMethod.POST, entity, String.class
+            );
+
+            String jsonText = extraireTexteReponse(response.getBody());
+            // Nettoyage au cas où Gemini renvoie du markdown comme ```json ... ```
+            if (jsonText.startsWith("```json")) {
+                jsonText = jsonText.substring(7);
+            }
+            if (jsonText.endsWith("```")) {
+                jsonText = jsonText.substring(0, jsonText.length() - 3);
+            }
+            if (jsonText.startsWith("```")) {
+                jsonText = jsonText.substring(3);
+            }
+            jsonText = jsonText.trim();
+
+            return objectMapper.readValue(jsonText, OcrResponse.class);
+
+        } catch (Exception e) {
+            log.error("Erreur OCR avec Gemini : {}", e.getMessage(), e);
+            // Retourner un objet vide en cas d'erreur
+            return new OcrResponse("", "", "", "");
         }
     }
 

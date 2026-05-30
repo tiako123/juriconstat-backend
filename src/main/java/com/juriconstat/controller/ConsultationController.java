@@ -2,7 +2,10 @@ package com.juriconstat.controller;
 
 import com.juriconstat.dto.ConsultationRequest;
 import com.juriconstat.dto.ConsultationResponse;
+import com.juriconstat.dto.OcrRequest;
+import com.juriconstat.dto.OcrResponse;
 import com.juriconstat.service.ConsultationService;
+import com.juriconstat.service.GeminiService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -30,6 +33,20 @@ import java.util.Map;
 public class ConsultationController {
 
     private final ConsultationService consultationService;
+    private final GeminiService geminiService;
+
+    // ─── POST /consultations/ocr ───────────────────────────────────────────────
+
+    /**
+     * Extrait les informations d'une image (carte grise, assurance) via OCR Gemini.
+     * @param request contenant l'image base64
+     * @return OcrResponse avec les données extraites
+     */
+    @PostMapping("/ocr")
+    public ResponseEntity<OcrResponse> extraireOcr(@Valid @RequestBody OcrRequest request) {
+        OcrResponse response = geminiService.extraireOcrDepuisImage(request.getBase64Image(), request.getMimeType());
+        return ResponseEntity.ok(response);
+    }
 
     // ─── POST /consultations ───────────────────────────────────────────────────
 

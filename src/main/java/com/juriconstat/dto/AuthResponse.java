@@ -28,4 +28,7 @@ public class AuthResponse {
 
     /** Nom de l'utilisateur (pour l'affichage) */
     private String nom;
+
+    /** Email de l'utilisateur (pour le profil) */
+    private String email;
 }

@@ -57,6 +57,7 @@ public class AuthService {
                 .role(saved.getRole())
                 .userId(saved.getId())
                 .nom(saved.getNom())
+                .email(saved.getEmail())
                 .build();
     }
 
@@ -84,6 +85,7 @@ public class AuthService {
                 .role(user.getRole())
                 .userId(user.getId())
                 .nom(user.getNom())
+                .email(user.getEmail())
                 .build();
     }
 }
