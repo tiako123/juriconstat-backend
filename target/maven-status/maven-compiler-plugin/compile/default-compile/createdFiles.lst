@@ -1,5 +1,6 @@
 com\juriconstat\controller\AdminController.class
 com\juriconstat\config\DatabaseSeeder.class
+com\juriconstat\dto\OcrResponse.class
 com\juriconstat\repository\ConsultationRepository.class
 com\juriconstat\model\User$UserBuilder.class
 com\juriconstat\security\JwtAuthFilter.class
@@ -10,6 +11,7 @@ com\juriconstat\dto\AuthResponse.class
 com\juriconstat\service\GeminiService.class
 com\juriconstat\controller\ConsultationController.class
 com\juriconstat\dto\RegisterRequest.class
+com\juriconstat\dto\OcrResponse$OcrResponseBuilder.class
 com\juriconstat\JuriconstatApplication.class
 com\juriconstat\dto\UserProfileResponse.class
 com\juriconstat\config\AppConfig.class
@@ -23,6 +25,7 @@ com\juriconstat\dto\ConsultationResponse.class
 com\juriconstat\model\Consultation.class
 com\juriconstat\exception\GlobalExceptionHandler.class
 com\juriconstat\config\SecurityConfig.class
+com\juriconstat\dto\OcrRequest.class
 com\juriconstat\dto\AdminUserResponse.class
 com\juriconstat\controller\UserController.class
 com\juriconstat\dto\LoginRequest.class

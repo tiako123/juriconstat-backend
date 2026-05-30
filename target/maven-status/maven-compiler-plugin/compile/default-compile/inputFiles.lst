@@ -10,6 +10,8 @@ E:\Repository\Juriconstat\juriconstat-backend\src\main\java\com\juriconstat\dto\
 E:\Repository\Juriconstat\juriconstat-backend\src\main\java\com\juriconstat\dto\ConsultationRequest.java
 E:\Repository\Juriconstat\juriconstat-backend\src\main\java\com\juriconstat\dto\ConsultationResponse.java
 E:\Repository\Juriconstat\juriconstat-backend\src\main\java\com\juriconstat\dto\LoginRequest.java
+E:\Repository\Juriconstat\juriconstat-backend\src\main\java\com\juriconstat\dto\OcrRequest.java
+E:\Repository\Juriconstat\juriconstat-backend\src\main\java\com\juriconstat\dto\OcrResponse.java
 E:\Repository\Juriconstat\juriconstat-backend\src\main\java\com\juriconstat\dto\RegisterRequest.java
 E:\Repository\Juriconstat\juriconstat-backend\src\main\java\com\juriconstat\dto\UserProfileResponse.java
 E:\Repository\Juriconstat\juriconstat-backend\src\main\java\com\juriconstat\exception\GlobalExceptionHandler.java
