@@ -46,7 +46,7 @@ public class GlobalExceptionHandler {
      */
     @ExceptionHandler(QuotaExceededException.class)
     public ResponseEntity<Map<String, String>> handleQuotaExceededException(QuotaExceededException ex) {
-        return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Map.of("erreur", ex.getMessage()));
+        return ResponseEntity.status(HttpStatus.PAYMENT_REQUIRED).body(Map.of("erreur", ex.getMessage()));
     }
 
     /**

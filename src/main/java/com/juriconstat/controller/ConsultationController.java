@@ -111,6 +111,6 @@ public class ConsultationController {
     @ExceptionHandler(com.juriconstat.exception.QuotaExceededException.class)
     public ResponseEntity<Map<String, String>> handleQuotaExceeded(
             com.juriconstat.exception.QuotaExceededException ex) {
-        return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Map.of("erreur", ex.getMessage()));
+        return ResponseEntity.status(HttpStatus.PAYMENT_REQUIRED).body(Map.of("erreur", ex.getMessage()));
     }
 }

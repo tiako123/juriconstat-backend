@@ -69,9 +69,9 @@ public class ConsultationService {
                     .withSecond(0)
                     .withNano(0);
             long consultationsCeMois = consultationRepository.countByUserIdAndCreatedAtAfter(user.getId(), startOfMonth);
-            if (consultationsCeMois >= 99999) {
+            if (consultationsCeMois >= 20) {
                 log.warn("Quota atteint pour l'utilisateur {} ({} consultations ce mois-ci)", userEmail, consultationsCeMois);
-                throw new QuotaExceededException("Limite mensuelle atteinte");
+                throw new QuotaExceededException("Limite mensuelle de consultations gratuite atteinte");
             }
         }
 
