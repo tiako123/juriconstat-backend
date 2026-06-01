@@ -51,7 +51,12 @@ public class GeminiService {
      */
     public String genererReponseJuridique(String requete, String pays, String langue, String mediaData, String mediaMimeType) {
         String prompt = construirePrompt(requete, pays, langue);
-        String urlComplete = apiUrl + "?key=" + apiKey;
+
+        // Liste des endpoints de modèles à tester (premier marche, sinon fallback)
+        List<String> modelUrls = List.of(
+                apiUrl + "?key=" + apiKey,
+                apiUrl.replace("/gemini-2.5-flash:", "/gemini-2.5-flash-lite:") + "?key=" + apiKey
+        );
 
         // Construction de la liste des parties (parts) pour la requête
         List<Map<String, Object>> parts;
@@ -95,18 +100,23 @@ public class GeminiService {
 
         HttpEntity<Map<String, Object>> entity = new HttpEntity<>(requestBody, headers);
 
-        try {
-            ResponseEntity<String> response = restTemplate.exchange(
-                    urlComplete, HttpMethod.POST, entity, String.class
-            );
-
-            return extraireTexteReponse(response.getBody());
-
-        } catch (Exception e) {
-            log.error("Erreur lors de l'appel à l'API Gemini : {}", e.getMessage(), e);
-            return "⚠️ Le service d'assistance juridique est temporairement indisponible. "
-                    + "Veuillez réessayer dans quelques instants ou contacter un avocat directement.";
+        Exception lastException = null;
+        for (String url : modelUrls) {
+            try {
+                log.info("Tentative d'appel Gemini avec l'URL: {}", url.replaceAll("key=.*", "key=HIDDEN"));
+                ResponseEntity<String> response = restTemplate.exchange(
+                        url, HttpMethod.POST, entity, String.class
+                );
+                return extraireTexteReponse(response.getBody());
+            } catch (Exception e) {
+                lastException = e;
+                log.warn("Échec de l'appel Gemini pour l'URL {}: {}", url.replaceAll("key=.*", "key=HIDDEN"), e.getMessage());
+            }
         }
+
+        log.error("Tous les modèles Gemini ont échoué. Dernière erreur : {}", lastException.getMessage(), lastException);
+        return "⚠️ Le service d'assistance juridique est temporairement indisponible. "
+                + "Veuillez réessayer dans quelques instants ou contacter un avocat directement.";
     }
 
     /**
@@ -119,7 +129,11 @@ public class GeminiService {
      */
     public OcrResponse extraireOcrDepuisImage(String mediaData, String mediaMimeType) {
         String prompt = "Extrait de manière précise les informations suivantes du document fourni (qui est soit une carte grise, soit une attestation d'assurance) et retourne-les EXACTEMENT sous ce format JSON strict sans balises supplémentaires : { \"nom\": \"Prénom et Nom du propriétaire/assuré\", \"immatriculation\": \"Plaque d'immatriculation (formaté XX-000-XX ou 0000 XX 00)\", \"assurance\": \"Nom de la compagnie d'assurance (si présent)\", \"police\": \"Numéro de police d'assurance (si présent)\" }. Si une information n'est pas trouvée, mets null au lieu de la clé. N'invente rien.";
-        String urlComplete = apiUrl + "?key=" + apiKey;
+
+        List<String> modelUrls = List.of(
+                apiUrl + "?key=" + apiKey,
+                apiUrl.replace("/gemini-2.5-flash:", "/gemini-2.5-flash-lite:") + "?key=" + apiKey
+        );
 
         String base64Cleaned = mediaData;
         if (mediaData.contains("base64,")) {
@@ -150,31 +164,38 @@ public class GeminiService {
 
         HttpEntity<Map<String, Object>> entity = new HttpEntity<>(requestBody, headers);
 
-        try {
-            ResponseEntity<String> response = restTemplate.exchange(
-                    urlComplete, HttpMethod.POST, entity, String.class
-            );
+        Exception lastException = null;
+        for (String url : modelUrls) {
+            try {
+                log.info("Tentative OCR avec l'URL: {}", url.replaceAll("key=.*", "key=HIDDEN"));
+                ResponseEntity<String> response = restTemplate.exchange(
+                        url, HttpMethod.POST, entity, String.class
+                );
 
-            String jsonText = extraireTexteReponse(response.getBody());
-            // Nettoyage au cas où Gemini renvoie du markdown comme ```json ... ```
-            if (jsonText.startsWith("```json")) {
-                jsonText = jsonText.substring(7);
-            }
-            if (jsonText.endsWith("```")) {
-                jsonText = jsonText.substring(0, jsonText.length() - 3);
-            }
-            if (jsonText.startsWith("```")) {
-                jsonText = jsonText.substring(3);
-            }
-            jsonText = jsonText.trim();
+                String jsonText = extraireTexteReponse(response.getBody());
+                // Nettoyage au cas où Gemini renvoie du markdown comme ```json ... ```
+                if (jsonText.startsWith("```json")) {
+                    jsonText = jsonText.substring(7);
+                }
+                if (jsonText.endsWith("```")) {
+                    jsonText = jsonText.substring(0, jsonText.length() - 3);
+                }
+                if (jsonText.startsWith("```")) {
+                    jsonText = jsonText.substring(3);
+                }
+                jsonText = jsonText.trim();
 
-            return objectMapper.readValue(jsonText, OcrResponse.class);
+                return objectMapper.readValue(jsonText, OcrResponse.class);
 
-        } catch (Exception e) {
-            log.error("Erreur OCR avec Gemini : {}", e.getMessage(), e);
-            // Retourner un objet vide en cas d'erreur
-            return new OcrResponse("", "", "", "");
+            } catch (Exception e) {
+                lastException = e;
+                log.warn("Échec de l'OCR pour l'URL {}: {}", url.replaceAll("key=.*", "key=HIDDEN"), e.getMessage());
+            }
         }
+
+        log.error("Tous les modèles OCR ont échoué. Dernière erreur : {}", lastException.getMessage(), lastException);
+        // Retourner un objet vide en cas d'erreur
+        return new OcrResponse("", "", "", "");
     }
 
     // ─── Helpers privés ────────────────────────────────────────────────────────
