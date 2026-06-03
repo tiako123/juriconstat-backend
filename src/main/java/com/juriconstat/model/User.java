@@ -66,6 +66,12 @@ public class User {
     @Builder.Default
     private String abonnement = "GRATUIT";
 
+    /**
+     * Photo de profil en Base64 ou URL externe
+     */
+    @Column(columnDefinition = "TEXT")
+    private String photoProfil;
+
     // ===== Audit =====
 
     @CreationTimestamp

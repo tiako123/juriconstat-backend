@@ -28,4 +28,6 @@ public class RegisterRequest {
     private String pays;
 
     private String langue;
+
+    private String role; // Optionnel: USER (défaut), PROFESSIONNEL, PARTENAIRE
 }

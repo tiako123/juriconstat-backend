@@ -49,8 +49,8 @@ public class GeminiService {
      * @param mediaMimeType type MIME du média (optionnel)
      * @return réponse juridique générée par Gemini IA
      */
-    public String genererReponseJuridique(String requete, String pays, String langue, String mediaData, String mediaMimeType) {
-        String prompt = construirePrompt(requete, pays, langue);
+    public String genererReponseJuridique(String requete, String pays, String langue, String mediaData, String mediaMimeType, boolean isEmergency) {
+        String prompt = construirePrompt(requete, pays, langue, isEmergency);
 
         // Liste des endpoints de modèles à tester (premier marche, sinon fallback)
         List<String> modelUrls = List.of(
@@ -84,6 +84,13 @@ public class GeminiService {
             log.info("Appel textuel pur Gemini");
         }
 
+        List<Map<String, String>> safetySettings = List.of(
+                Map.of("category", "HARM_CATEGORY_HARASSMENT", "threshold", "BLOCK_NONE"),
+                Map.of("category", "HARM_CATEGORY_HATE_SPEECH", "threshold", "BLOCK_NONE"),
+                Map.of("category", "HARM_CATEGORY_SEXUALLY_EXPLICIT", "threshold", "BLOCK_NONE"),
+                Map.of("category", "HARM_CATEGORY_DANGEROUS_CONTENT", "threshold", "BLOCK_NONE")
+        );
+
         // Corps de la requête Gemini
         Map<String, Object> requestBody = Map.of(
                 "contents", List.of(
@@ -91,8 +98,9 @@ public class GeminiService {
                 ),
                 "generationConfig", Map.of(
                         "temperature", 0.3,
-                        "maxOutputTokens", 2048
-                )
+                        "maxOutputTokens", 8192
+                ),
+                "safetySettings", safetySettings
         );
 
         HttpHeaders headers = new HttpHeaders();
@@ -107,7 +115,11 @@ public class GeminiService {
                 ResponseEntity<String> response = restTemplate.exchange(
                         url, HttpMethod.POST, entity, String.class
                 );
-                return extraireTexteReponse(response.getBody());
+                
+                String rawJson = response.getBody();
+                log.info("RAW GEMINI RESPONSE: {}", rawJson);
+                
+                return extraireTexteReponse(rawJson);
             } catch (Exception e) {
                 lastException = e;
                 log.warn("Échec de l'appel Gemini pour l'URL {}: {}", url.replaceAll("key=.*", "key=HIDDEN"), e.getMessage());
@@ -149,6 +161,13 @@ public class GeminiService {
                 ))
         );
 
+        List<Map<String, String>> safetySettings = List.of(
+                Map.of("category", "HARM_CATEGORY_HARASSMENT", "threshold", "BLOCK_NONE"),
+                Map.of("category", "HARM_CATEGORY_HATE_SPEECH", "threshold", "BLOCK_NONE"),
+                Map.of("category", "HARM_CATEGORY_SEXUALLY_EXPLICIT", "threshold", "BLOCK_NONE"),
+                Map.of("category", "HARM_CATEGORY_DANGEROUS_CONTENT", "threshold", "BLOCK_NONE")
+        );
+
         Map<String, Object> requestBody = Map.of(
                 "contents", List.of(
                         Map.of("parts", parts)
@@ -156,7 +175,8 @@ public class GeminiService {
                 "generationConfig", Map.of(
                         "temperature", 0.0, // Faible température pour éviter les hallucinations
                         "maxOutputTokens", 500
-                )
+                ),
+                "safetySettings", safetySettings
         );
 
         HttpHeaders headers = new HttpHeaders();
@@ -205,25 +225,64 @@ public class GeminiService {
      * Le prompt guide l'IA pour qu'elle agisse en tant qu'assistant juridique
      * spécialisé dans le pays et la langue spécifiés.
      */
-    private String construirePrompt(String requete, String pays, String langue) {
-        return String.format("""
-                Tu es JuriConstat, un assistant juridique expert et professionnel.
-                Tu spécialises en droit de %s.
-                Tu réponds TOUJOURS en %s.
-                
-                Règles importantes :
-                - Fournis des informations juridiques précises et pratiques.
-                - Cite les articles de loi ou textes réglementaires applicables au %s si possible.
-                - Recommande de consulter un avocat pour les cas complexes.
-                - Reste neutre, objectif et professionnel.
-                - Structure ta réponse clairement (situation légale, droits, actions recommandées).
-                - Ne dépasse pas 500 mots.
-                
-                Question de l'utilisateur :
-                %s
-                """,
-                pays, langue, pays, requete
-        );
+    private String construirePrompt(String requete, String pays, String langue, boolean isEmergency) {
+        if (isEmergency) {
+            return String.format("""
+                    Tu es JuriConstat, un assistant juridique pratique et direct.
+                    Pays de référence : %s. Langue de réponse : %s.
+                    
+                    RÈGLES STRICTES POUR SITUATION D'URGENCE :
+                    1. Commence TOUJOURS par les ACTIONS CONCRÈTES à faire immédiatement (numérotées).
+                    2. Sois DIRECT et PRATIQUE : dis quoi faire, pas la théorie juridique.
+                    3. Dans la base légale, sois EXTRÊMEMENT PRÉCIS : cite l'Article exact, l'alinéa, le nom complet du Code (ex: Code civil, Code pénal), le numéro de la Loi ou l'article de la Constitution. Ne dis jamais "selon la loi" de façon vague.
+                    4. Maximum 250 mots. Pas de blabla. Pas de répétitions.
+                    5. Utilise le format Markdown : **gras** pour les actions importantes, des listes numérotées.
+                    6. Termine par un conseil pratique court (emoji 💡).
+                    
+                    FORMAT OBLIGATOIRE :
+                    ## ⚡ Actions immédiates
+                    1. [Action concrète]
+                    2. [Action concrète]
+                    ...
+                    
+                    ## 📋 Base légale
+                    - **[Nom du Code / Numéro de Loi]**, Article [Numéro], Alinéa [Numéro] : [Brève explication de 2-3 lignes max]
+                    
+                    💡 **Conseil** : [conseil pratique court]
+                    
+                    Question de l'utilisateur :
+                    %s
+                    """,
+                    pays, langue, requete
+            );
+        } else {
+            return String.format("""
+                    Tu es JuriConstat, un expert juridique pédagogique et structuré.
+                    Pays de référence : %s. Langue de réponse : %s.
+                    
+                    RÈGLES STRICTES POUR L'EXPLICATION JURIDIQUE :
+                    1. Réponds de manière claire, structurée et pédagogique.
+                    2. Sois EXTRÊMEMENT PRÉCIS dans tes sources : cite toujours l'Article exact, l'alinéa, le nom complet du Code (ex: Code civil, Code pénal, Code du travail), le numéro de la Loi ou l'article de la Constitution applicables au %s. Ne dis jamais "selon la loi" de façon vague.
+                    3. Rédige TOUJOURS ta réponse en suivant le format de section obligatoire ci-dessous, même s'il ne s'agit pas d'une urgence.
+                    4. Maximum 300 mots. Utilise le format Markdown.
+                    
+                    FORMAT OBLIGATOIRE :
+                    ## ⚡ Actions immédiates
+                    1. [Action concrète à faire]
+                    2. [Action concrète à faire]
+                    ...
+                    
+                    ## 📋 Loi concernée
+                    - **[Nom du Code / Numéro de Loi]**, Article [Numéro], Alinéa [Numéro] : [Explication claire et précise]
+                    
+                    💡 **Conseil** : [conseil ou note récapitulative courte]
+                    
+                    Question de l'utilisateur :
+                    %s
+                    """,
+                    pays, langue, pays, requete
+            );
+        }
     }
 
     /**
@@ -234,13 +293,16 @@ public class GeminiService {
      */
     private String extraireTexteReponse(String jsonResponse) throws Exception {
         JsonNode root = objectMapper.readTree(jsonResponse);
-        return root
-                .path("candidates")
-                .get(0)
-                .path("content")
-                .path("parts")
-                .get(0)
-                .path("text")
-                .asText();
+        JsonNode partsNode = root.path("candidates").get(0).path("content").path("parts");
+        
+        StringBuilder sb = new StringBuilder();
+        if (partsNode.isArray()) {
+            for (JsonNode part : partsNode) {
+                if (part.has("text")) {
+                    sb.append(part.path("text").asText());
+                }
+            }
+        }
+        return sb.toString();
     }
 }

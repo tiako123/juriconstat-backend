@@ -38,13 +38,21 @@ public class AuthService {
             throw new IllegalArgumentException("Email déjà utilisé : " + request.getEmail());
         }
 
+        String assignedRole = "ROLE_USER";
+        if (request.getRole() != null) {
+            String requestedRole = request.getRole().toUpperCase();
+            if (requestedRole.equals("PROFESSIONNEL") || requestedRole.equals("PARTENAIRE")) {
+                assignedRole = "ROLE_" + requestedRole;
+            }
+        }
+
         User user = User.builder()
                 .nom(request.getNom())
                 .email(request.getEmail())
                 .password(passwordEncoder.encode(request.getPassword()))
                 .pays(request.getPays())
                 .langue(request.getLangue())
-                .role("ROLE_USER")
+                .role(assignedRole)
                 .abonnement("GRATUIT")
                 .build();
 

@@ -24,5 +24,6 @@ public class UserProfileResponse {
     private String langue;
     private String role;
     private String abonnement;
+    private String photoProfil;
     private java.time.LocalDateTime createdAt;
 }

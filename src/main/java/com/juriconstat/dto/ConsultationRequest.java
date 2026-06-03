@@ -44,4 +44,10 @@ public class ConsultationRequest {
      * Type MIME du média (ex: image/jpeg, audio/mp3, video/mp4) (optionnel).
      */
     private String mediaMimeType;
+
+    /**
+     * Indique si la requête est une urgence (nécessitant des actions immédiates)
+     * ou une simple demande d'explication.
+     */
+    private boolean isEmergency = false;
 }

@@ -87,9 +87,9 @@ public class ConsultationService {
 
         log.info("Nouvelle consultation pour {} | pays={} | langue={}", userEmail, pays, langue);
 
-        // 4. Appeler Gemini IA avec les paramètres de média
+        // 4. Appeler Gemini IA avec les paramètres de média et l'indicateur d'urgence
         String reponseIa = geminiService.genererReponseJuridique(
-                request.getRequete(), pays, langue, request.getMediaData(), request.getMediaMimeType()
+                request.getRequete(), pays, langue, request.getMediaData(), request.getMediaMimeType(), request.isEmergency()
         );
 
         // 5. Sauvegarder en base
